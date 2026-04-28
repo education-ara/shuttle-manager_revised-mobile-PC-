@@ -37,7 +37,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: shuttle-management # Cloudflare에 설정된 프로젝트 이름을 입력하세요
+          projectName: shuttle-manager
           directory: .next
           # If this is a Next.js app with SSR, you might need special handling,
           # but for static export or standard pages, this works well.
