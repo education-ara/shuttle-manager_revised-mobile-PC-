@@ -1,3 +1,4 @@
+# Trigger manual deploy
 name: Deploy to Cloudflare Pages
 
 on:
