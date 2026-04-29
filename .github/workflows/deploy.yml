@@ -37,7 +37,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: shuttle-manager-revised
+          projectName: shuttle-manager
           directory: .next
           # If this is a Next.js app with SSR, you might need special handling,
           # but for static export or standard pages, this works well.
