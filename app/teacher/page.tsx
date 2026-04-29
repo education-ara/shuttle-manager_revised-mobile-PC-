@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { Teacher, WorkLog } from '@/types';
+import { Teacher, WorkLog, Holiday } from '@/types';
 import { getWeekdaysOfMonth, formatKoreanDate } from '@/lib/payroll';
 import { format, addMonths, subMonths } from 'date-fns';
 import { Suspense } from 'react';
@@ -26,6 +26,7 @@ function TeacherPageInner() {
   const [teacher, setTeacher] = useState<Teacher | null>(null);
   const [month, setMonth] = useState(monthParam);
   const [logs, setLogs] = useState<Map<string, WorkLog>>(new Map());
+  const [holidays, setHolidays] = useState<Map<string, Holiday>>(new Map());
   const [rowData, setRowData] = useState<Map<string, RowData>>(new Map());
   const [saveStatus, setSaveStatus] = useState<Map<string, SaveStatus>>(new Map());
   const [loading, setLoading] = useState(true);
@@ -93,6 +94,20 @@ function TeacherPageInner() {
 
         setLogs(logMap);
         setRowData(rdMap);
+      });
+
+    // Fetch holidays
+    supabase
+      .from('holidays')
+      .select('*')
+      .gte('holiday_date', startDate)
+      .lte('holiday_date', endDate)
+      .then(({ data }) => {
+        const hMap = new Map<string, Holiday>();
+        if (data) {
+          for (const h of data) hMap.set(h.holiday_date, h);
+        }
+        setHolidays(hMap);
         setLoading(false);
       });
   }, [teacherId, month]);
@@ -280,7 +295,7 @@ function TeacherPageInner() {
                   <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-outline">출근</th>
                   <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-outline">첫차 출발</th>
                   <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-outline">마지막 하차</th>
-                  <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-outline">원 도착</th>
+                  <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-outline">퇴근</th>
                   <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-outline">메모</th>
                   <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-outline text-center">제출</th>
                 </tr>
@@ -304,16 +319,26 @@ function TeacherPageInner() {
                       };
                       const status = saveStatus.get(dateStr) || 'idle';
                       const missing = isRowMissing(dateStr);
+                      const holiday = holidays.get(dateStr);
 
                       return (
                         <tr
                           key={dateStr}
-                          className={`transition-colors ${missing ? 'bg-red-50/30' : 'hover:bg-stone-50/50'}`}
+                          className={`transition-colors ${
+                            missing ? 'bg-red-50/30' : holiday ? 'bg-amber-50/20' : 'hover:bg-stone-50/50'
+                          }`}
                         >
                           <td className="px-4 py-3 whitespace-nowrap">
-                            <span className="text-sm font-bold text-on-surface">
-                              {formatKoreanDate(dateStr)}
-                            </span>
+                            <div className="flex flex-col">
+                              <span className="text-sm font-bold text-on-surface">
+                                {formatKoreanDate(dateStr)}
+                              </span>
+                              {holiday && (
+                                <span className="text-[10px] font-bold text-amber-600 leading-tight">
+                                  {holiday.name || '학원 휴원일'}
+                                </span>
+                              )}
+                            </div>
                           </td>
 
                           {(['check_in_time', 'first_bus_time', 'last_dropoff_time', 'arrival_time'] as const).map(
@@ -397,16 +422,26 @@ function TeacherPageInner() {
                 };
                 const status = saveStatus.get(dateStr) || 'idle';
                 const missing = isRowMissing(dateStr);
+                const holiday = holidays.get(dateStr);
 
                 return (
                   <div 
                     key={dateStr} 
-                    className={`p-4 space-y-4 transition-colors ${missing ? 'bg-red-50/30' : ''}`}
+                    className={`p-4 space-y-4 transition-colors ${
+                      missing ? 'bg-red-50/30' : holiday ? 'bg-amber-50/20' : ''
+                    }`}
                   >
                     <div className="flex justify-between items-center">
-                      <span className="text-sm font-bold text-on-surface">
-                        {formatKoreanDate(dateStr)}
-                      </span>
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-on-surface">
+                          {formatKoreanDate(dateStr)}
+                        </span>
+                        {holiday && (
+                          <span className="text-[10px] font-bold text-amber-600">
+                            {holiday.name || '학원 휴원일'}
+                          </span>
+                        )}
+                      </div>
                       <div className="flex items-center gap-2">
                         {status === 'saving' && <span className="material-symbols-outlined text-amber-400 text-base saving-pulse">cloud_sync</span>}
                         {status === 'saved' && <span className="material-symbols-outlined text-emerald-500 text-base">cloud_done</span>}
@@ -420,7 +455,7 @@ function TeacherPageInner() {
                         { id: 'check_in_time', label: '출근' },
                         { id: 'first_bus_time', label: '첫차' },
                         { id: 'last_dropoff_time', label: '하차' },
-                        { id: 'arrival_time', label: '도착' },
+                        { id: 'arrival_time', label: '퇴근' },
                       ].map((field) => (
                         <div key={field.id} className="space-y-1">
                           <label className="text-[10px] font-bold text-outline uppercase">{field.label}</label>

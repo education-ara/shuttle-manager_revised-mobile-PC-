@@ -126,7 +126,7 @@ function LogsPageInner() {
                 <th className="px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-outline">출근</th>
                 <th className="px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-outline">첫차 출발</th>
                 <th className="px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-outline">마지막 하차</th>
-                <th className="px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-outline">원 도착</th>
+                <th className="px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-outline">퇴근</th>
                 <th className="px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-outline">메모</th>
                 <th className="px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-outline">기록 시간</th>
                 <th className="px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-outline">상태</th>

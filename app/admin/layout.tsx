@@ -8,6 +8,7 @@ import AdminLogin from '@/components/AdminLogin';
 const NAV_ITEMS = [
   { href: '/admin', label: '개요', icon: 'dashboard' },
   { href: '/admin/teachers', label: '선생님 관리', icon: 'group' },
+  { href: '/admin/holidays', label: '휴원일 관리', icon: 'calendar_today' },
   { href: '/admin/payroll', label: '급여 정산', icon: 'payments' },
   { href: '/admin/logs', label: '출석 로그', icon: 'receipt_long' },
 ];

@@ -1,4 +1,4 @@
-import { WorkLog, Teacher, PayrollResult, DailyPayroll } from '@/types';
+import { WorkLog, Teacher, PayrollResult, DailyPayroll, Holiday } from '@/types';
 import {
   format,
   startOfMonth,
@@ -43,7 +43,7 @@ export function calcAdjustedCheckIn(
 
   if (checkInMins === null || firstBusMins === null) return null;
 
-  const maxEarlyMins = firstBusMins - 20;
+  const maxEarlyMins = firstBusMins - 10;
   const adjustedMins = Math.max(checkInMins, maxEarlyMins);
   return minutesToTime(adjustedMins);
 }
@@ -70,7 +70,8 @@ export function calcDailyWorkHours(
 export function calculatePayroll(
   teacher: Teacher,
   logs: WorkLog[],
-  month: string // "YYYY-MM"
+  month: string, // "YYYY-MM"
+  holidays: Holiday[] = []
 ): PayrollResult {
   const [year, mon] = month.split('-').map(Number);
   const monthStart = startOfMonth(new Date(year, mon - 1, 1));
@@ -82,6 +83,11 @@ export function calculatePayroll(
   const logMap = new Map<string, WorkLog>();
   for (const log of logs) {
     logMap.set(log.work_date, log);
+  }
+
+  const holidayMap = new Map<string, Holiday>();
+  for (const h of holidays) {
+    holidayMap.set(h.holiday_date, h);
   }
 
   const dailyResults: DailyPayroll[] = weekdays.map((day) => {
@@ -96,12 +102,16 @@ export function calculatePayroll(
     const adjustedCheckIn = calcAdjustedCheckIn(checkIn, firstBus);
     const workHours = calcDailyWorkHours(adjustedCheckIn, arrival);
 
+    const holidayInfo = holidayMap.get(dateStr) || null;
+
     const isMissing =
-      !log ||
-      !log.check_in_time ||
-      !log.first_bus_time ||
-      !log.last_dropoff_time ||
-      !log.arrival_time;
+      !holidayInfo && (
+        !log ||
+        !log.check_in_time ||
+        !log.first_bus_time ||
+        !log.last_dropoff_time ||
+        !log.arrival_time
+      );
 
     return {
       date: dateStr,
@@ -113,6 +123,7 @@ export function calculatePayroll(
       workHours,
       memo: log?.memo ?? null,
       isMissing,
+      holidayInfo,
     };
   });
 
@@ -158,6 +169,5 @@ export function formatCurrency(amount: number): string {
 export function formatHours(hours: number): string {
   const h = Math.floor(hours);
   const m = Math.round((hours - h) * 60);
-  if (m === 0) return `${h}시간`;
   return `${h}시간 ${m}분`;
 }

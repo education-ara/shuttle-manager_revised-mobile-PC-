@@ -41,4 +41,13 @@ export interface DailyPayroll {
   workHours: number | null;
   memo: string | null;
   isMissing: boolean;
+  holidayInfo?: Holiday | null;
+}
+
+export interface Holiday {
+  id: string;
+  holiday_date: string;
+  name: string | null;
+  is_academy_holiday: boolean;
+  created_at: string;
 }

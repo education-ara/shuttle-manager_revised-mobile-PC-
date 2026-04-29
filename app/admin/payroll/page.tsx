@@ -54,7 +54,13 @@ function PayrollPageInner() {
       .gte('work_date', startDate)
       .lte('work_date', endDate);
 
-    const result = calculatePayroll(teacher, logs || [], month);
+    const { data: holidays } = await supabase
+      .from('holidays')
+      .select('*')
+      .gte('holiday_date', startDate)
+      .lte('holiday_date', endDate);
+
+    const result = calculatePayroll(teacher, logs || [], month, holidays || []);
     setPayroll(result);
     setLoading(false);
   }
@@ -182,9 +188,9 @@ function PayrollPageInner() {
                         <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-outline">입력 출근</th>
                         <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-outline">
                           보정 출근
-                          <span className="ml-1 text-[9px] normal-case tracking-normal text-outline/60">(첫차-20분)</span>
+                          <span className="ml-1 text-[9px] normal-case tracking-normal text-outline/60">(첫차-10분)</span>
                         </th>
-                        <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-outline">원 도착</th>
+                        <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-outline">퇴근</th>
                         <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-outline">근무시간</th>
                         <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-outline">상태</th>
                       </tr>
@@ -204,11 +210,18 @@ function PayrollPageInner() {
                             <tr
                               key={log.date}
                               className={`transition-colors ${
-                                log.isMissing ? 'bg-red-50/40' : 'hover:bg-stone-50/50'
+                                log.isMissing ? 'bg-red-50/40' : log.holidayInfo ? 'bg-amber-50/30' : 'hover:bg-stone-50/50'
                               }`}
                             >
                               <td className="px-4 py-3 text-sm font-medium text-on-surface">
-                                {formatKoreanDate(log.date)}
+                                <div className="flex flex-col">
+                                  <span>{formatKoreanDate(log.date)}</span>
+                                  {log.holidayInfo && (
+                                    <span className="text-[10px] font-bold text-amber-600">
+                                      {log.holidayInfo.name || '학원 휴원일'}
+                                    </span>
+                                  )}
+                                </div>
                               </td>
                               <td className="px-4 py-3 text-sm text-on-surface-variant">
                                 {log.checkInTime || <span className="text-stone-300">-</span>}
@@ -221,7 +234,7 @@ function PayrollPageInner() {
                               </td>
                               <td className="px-4 py-3 text-sm font-bold text-on-surface">
                                 {log.workHours !== null
-                                  ? `${log.workHours.toFixed(2)}h`
+                                  ? formatHours(log.workHours)
                                   : <span className="text-stone-300 font-normal">-</span>}
                               </td>
                               <td className="px-4 py-3">
@@ -229,6 +242,11 @@ function PayrollPageInner() {
                                   <span className="inline-flex items-center gap-1 text-xs font-bold text-error">
                                     <span className="material-symbols-outlined text-sm">warning</span>
                                     누락
+                                  </span>
+                                ) : log.holidayInfo ? (
+                                  <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-600">
+                                    <span className="material-symbols-outlined text-sm">event_busy</span>
+                                    휴원
                                   </span>
                                 ) : (
                                   <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600">
@@ -256,11 +274,11 @@ function PayrollPageInner() {
                   {[
                     {
                       title: '보정 출근 로직',
-                      desc: '첫 차 출발 시간 20분 전까지만 출근 시간으로 인정됩니다.',
+                      desc: '첫 차 출발 시간 10분 전까지만 출근 시간으로 인정됩니다.',
                     },
                     {
                       title: '퇴근 기준',
-                      desc: '원(학원) 도착 시간을 기준으로 정산됩니다.',
+                      desc: '퇴근 시간을 기준으로 정산됩니다.',
                     },
                   ].map((rule) => (
                     <li key={rule.title} className="flex gap-2.5">
@@ -282,7 +300,7 @@ function PayrollPageInner() {
                 <div className="space-y-2 text-xs">
                   <div className="flex justify-between text-on-surface-variant">
                     <span>총 근무시간</span>
-                    <span className="font-bold text-on-surface">{payroll.totalWorkHours.toFixed(2)}h</span>
+                    <span className="font-bold text-on-surface">{formatHours(payroll.totalWorkHours)}</span>
                   </div>
                   <div className="flex justify-between text-on-surface-variant">
                     <span>시급</span>

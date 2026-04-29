@@ -30,6 +30,12 @@ export default function AdminDashboard() {
       const lastDay = new Date(year, mon, 0).getDate();
       const endDate = `${currentMonth}-${String(lastDay).padStart(2, '0')}`;
 
+      const { data: holidays } = await supabase
+        .from('holidays')
+        .select('*')
+        .gte('holiday_date', startDate)
+        .lte('holiday_date', endDate);
+
       const sums = await Promise.all(
         teacherData.map(async (t) => {
           const { data: logs } = await supabase
@@ -39,7 +45,7 @@ export default function AdminDashboard() {
             .gte('work_date', startDate)
             .lte('work_date', endDate);
 
-          const payroll = calculatePayroll(t, logs || [], currentMonth);
+          const payroll = calculatePayroll(t, logs || [], currentMonth, holidays || []);
           const missingDays = payroll.logs.filter((l) => l.isMissing).length;
 
           return {
