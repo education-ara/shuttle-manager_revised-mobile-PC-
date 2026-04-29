@@ -32,6 +32,9 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
 
+      - name: Remove build cache
+        run: rm -rf .next/cache
+
       - name: Publish to Cloudflare Pages
         uses: cloudflare/pages-action@v1
         with:
