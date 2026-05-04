@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { Teacher, WorkLog, PayrollResult } from '@/types';
+import { Teacher, WorkLog, PayrollResult, DailyPayroll } from '@/types';
 import {
   calculatePayroll,
   formatCurrency,
@@ -125,6 +125,25 @@ function PayrollPageInner() {
       alert('저장 중 오류가 발생했습니다.');
     } finally {
       setIsSaving(false);
+    }
+  }
+
+  async function deleteLog(date: string) {
+    if (!selectedTeacherId) return;
+    if (!confirm(`${formatKoreanDate(date)}의 근무 기록을 초기화하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return;
+
+    try {
+      const { error } = await supabase
+        .from('work_logs')
+        .delete()
+        .eq('teacher_id', selectedTeacherId)
+        .eq('work_date', date);
+
+      if (error) throw error;
+      fetchPayroll();
+    } catch (err) {
+      console.error('Error deleting log:', err);
+      alert('초기화 중 오류가 발생했습니다.');
     }
   }
 
@@ -304,18 +323,29 @@ function PayrollPageInner() {
                                 ) : (
                                   <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600">
                                     <span className="material-symbols-outlined text-sm">check_circle</span>
-                                    완료
+                                  완료
                                   </span>
                                 )}
                               </td>
                               <td className="px-4 py-3 text-right">
-                                <button
-                                  onClick={() => openEditModal(log)}
-                                  className="text-primary hover:text-primary-dark p-1 rounded hover:bg-primary/10 transition-colors"
-                                  title="근무 기록 수정"
-                                >
-                                  <span className="material-symbols-outlined text-lg">edit_square</span>
-                                </button>
+                                <div className="flex justify-end gap-1">
+                                  <button
+                                    onClick={() => openEditModal(log)}
+                                    className="text-primary hover:text-primary-dark p-1 rounded hover:bg-primary/10 transition-colors"
+                                    title="근무 기록 수정"
+                                  >
+                                    <span className="material-symbols-outlined text-lg">edit_square</span>
+                                  </button>
+                                  {!log.isMissing && (
+                                    <button
+                                      onClick={() => deleteLog(log.date)}
+                                      className="text-error hover:text-red-700 p-1 rounded hover:bg-error/10 transition-colors"
+                                      title="근무 기록 초기화"
+                                    >
+                                      <span className="material-symbols-outlined text-lg">delete</span>
+                                    </button>
+                                  )}
+                                </div>
                               </td>
                             </tr>
                           ))}
