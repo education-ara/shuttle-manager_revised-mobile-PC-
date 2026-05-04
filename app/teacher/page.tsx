@@ -8,6 +8,15 @@ import { getWeekdaysOfMonth, formatKoreanDate, maskName } from '@/lib/payroll';
 import { format, addMonths, subMonths } from 'date-fns';
 import { Suspense } from 'react';
 
+const TEACHER_AVATARS: Record<string, string> = {
+  '변유하': '/avatars/avatar_1.png',
+  '이송미': '/avatars/avatar_2.png',
+  '이예슬': '/avatars/avatar_3.png',
+  '남궁미나': '/avatars/avatar_4.png',
+  '차선화': '/avatars/avatar_5.png',
+  '조소영': '/avatars/avatar_6.png',
+};
+
 type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 type RowData = {
   check_in_time: string;
@@ -249,10 +258,14 @@ function TeacherPageInner() {
         {/* Teacher card + Month selector */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           <div className="md:col-span-2 bg-surface-container-lowest p-5 rounded-xl border border-stone-100 flex items-center gap-4">
-            <div className="w-14 h-14 rounded-full bg-primary-container flex items-center justify-center">
-              <span className="text-xl font-black font-headline text-primary">
-                {teacher.name.charAt(0)}
-              </span>
+            <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center overflow-hidden border border-stone-100 ring-2 ring-primary-container">
+              {TEACHER_AVATARS[teacher.name] ? (
+                <img src={TEACHER_AVATARS[teacher.name]} alt={teacher.name} className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-xl font-black font-headline text-primary">
+                  {teacher.name.charAt(0)}
+                </span>
+              )}
             </div>
             <div>
               <h2 className="text-xl font-bold text-on-surface font-headline">{maskName(teacher.name)} 선생님</h2>

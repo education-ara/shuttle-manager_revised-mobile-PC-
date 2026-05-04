@@ -16,6 +16,15 @@ const AVATAR_COLORS = [
   { bg: 'bg-amber-100', text: 'text-amber-600', ring: 'ring-amber-200' },
 ];
 
+const TEACHER_AVATARS: Record<string, string> = {
+  '변유하': '/avatars/avatar_1.png',
+  '이송미': '/avatars/avatar_2.png',
+  '이예슬': '/avatars/avatar_3.png',
+  '남궁미나': '/avatars/avatar_4.png',
+  '차선화': '/avatars/avatar_5.png',
+  '조소영': '/avatars/avatar_6.png',
+};
+
 export default function HomePage() {
   const router = useRouter();
   const [teachers, setTeachers] = useState<Teacher[]>([]);
@@ -109,11 +118,15 @@ export default function HomePage() {
                       : 'border-transparent bg-surface-container-lowest hover:border-outline-variant'
                     }`}
                 >
-                  <div className={`w-12 h-12 md:w-16 md:h-16 rounded-full ${color.bg} ${color.ring} ring-2 
-                                   flex items-center justify-center mb-3 md:mb-4`}>
-                    <span className="text-xl md:text-2xl font-black font-headline text-stone-700">
-                      {teacher.name.charAt(0)}
-                    </span>
+                  <div className={`w-12 h-12 md:w-16 md:h-16 rounded-full bg-white ring-2 ${color.ring}
+                                   flex items-center justify-center mb-3 md:mb-4 overflow-hidden border border-stone-100`}>
+                    {TEACHER_AVATARS[teacher.name] ? (
+                      <img src={TEACHER_AVATARS[teacher.name]} alt={teacher.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-xl md:text-2xl font-black font-headline text-stone-700">
+                        {teacher.name.charAt(0)}
+                      </span>
+                    )}
                   </div>
                   <span className="text-sm md:text-base font-bold text-on-surface">{maskName(teacher.name)}</span>
                   <span className="text-[10px] md:text-xs text-on-surface-variant mt-0.5 opacity-70">

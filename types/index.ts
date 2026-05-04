@@ -8,6 +8,11 @@ export interface Teacher {
   last_work_date: string | null;
   leave_start_date: string | null;
   leave_end_date: string | null;
+  phone: string | null;
+  gender: string | null;
+  age: number | null;
+  address: string | null;
+  contract_end_date: string | null;
 }
 
 export interface WorkLog {
