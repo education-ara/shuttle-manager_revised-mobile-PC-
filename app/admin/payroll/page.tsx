@@ -24,6 +24,13 @@ function PayrollPageInner() {
   const [month, setMonth] = useState(initMonth);
   const [payroll, setPayroll] = useState<PayrollResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const [editingLog, setEditingLog] = useState<DailyPayroll | null>(null);
+  const [editForm, setEditForm] = useState({
+    checkInTime: '',
+    firstBusTime: '',
+    arrivalTime: '',
+  });
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     supabase.from('teachers').select('*').order('name').then(({ data }) => {
@@ -82,6 +89,43 @@ function PayrollPageInner() {
     const d = new Date(y, m - 1, 1);
     const next = dir === 'next' ? addMonths(d, 1) : subMonths(d, 1);
     setMonth(format(next, 'yyyy-MM'));
+  }
+
+  function openEditModal(log: DailyPayroll) {
+    setEditingLog(log);
+    setEditForm({
+      checkInTime: log.checkInTime || '',
+      firstBusTime: log.firstBusTime || '',
+      arrivalTime: log.arrivalTime || '',
+    });
+  }
+
+  async function saveLog() {
+    if (!editingLog || !selectedTeacherId) return;
+    setIsSaving(true);
+
+    try {
+      const { error } = await supabase
+        .from('work_logs')
+        .upsert({
+          teacher_id: selectedTeacherId,
+          work_date: editingLog.date,
+          check_in_time: editForm.checkInTime || null,
+          first_bus_time: editForm.firstBusTime || null,
+          last_dropoff_time: editForm.arrivalTime || null, // Defaulting last_dropoff to arrival for consistency
+          arrival_time: editForm.arrivalTime || null,
+        }, { onConflict: 'teacher_id,work_date' });
+
+      if (error) throw error;
+      
+      setEditingLog(null);
+      fetchPayroll();
+    } catch (err) {
+      console.error('Error saving log:', err);
+      alert('저장 중 오류가 발생했습니다.');
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   const [y, mon] = month.split('-').map(Number);
@@ -201,13 +245,14 @@ function PayrollPageInner() {
                         <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-outline">퇴근</th>
                         <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-outline">근무시간</th>
                         <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-outline">상태</th>
+                        <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-outline text-right">작업</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-stone-100">
                       {loading
                         ? [...Array(5)].map((_, i) => (
                             <tr key={i}>
-                              {[...Array(6)].map((_, j) => (
+                              {[...Array(7)].map((_, j) => (
                                 <td key={j} className="px-4 py-3">
                                   <div className="h-6 bg-stone-100 rounded animate-pulse" />
                                 </td>
@@ -262,6 +307,15 @@ function PayrollPageInner() {
                                     완료
                                   </span>
                                 )}
+                              </td>
+                              <td className="px-4 py-3 text-right">
+                                <button
+                                  onClick={() => openEditModal(log)}
+                                  className="text-primary hover:text-primary-dark p-1 rounded hover:bg-primary/10 transition-colors"
+                                  title="근무 기록 수정"
+                                >
+                                  <span className="material-symbols-outlined text-lg">edit_square</span>
+                                </button>
                               </td>
                             </tr>
                           ))}
@@ -329,6 +383,82 @@ function PayrollPageInner() {
         <div className="text-center py-20 text-on-surface-variant">
           <span className="material-symbols-outlined text-5xl block mb-4 opacity-30">calculate</span>
           <p>선생님과 월을 선택하면 급여가 자동 계산됩니다</p>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {editingLog && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="bg-stone-50 px-6 py-4 border-b border-stone-100 flex justify-between items-center">
+              <div>
+                <h3 className="font-bold text-on-surface font-headline">근무 기록 수정</h3>
+                <p className="text-xs text-on-surface-variant">{formatKoreanDate(editingLog.date)}</p>
+              </div>
+              <button onClick={() => setEditingLog(null)} className="text-outline hover:text-on-surface transition-colors">
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2">
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-outline mb-1.5">
+                    출근 시간 (Clock-in)
+                  </label>
+                  <input
+                    type="time"
+                    value={editForm.checkInTime}
+                    onChange={(e) => setEditForm({ ...editForm, checkInTime: e.target.value })}
+                    className="w-full bg-stone-50 border-stone-200 rounded-lg text-sm focus:ring-primary focus:border-primary"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-outline mb-1.5">
+                    첫 차량 출발
+                  </label>
+                  <input
+                    type="time"
+                    value={editForm.firstBusTime}
+                    onChange={(e) => setEditForm({ ...editForm, firstBusTime: e.target.value })}
+                    className="w-full bg-stone-50 border-stone-200 rounded-lg text-sm focus:ring-primary focus:border-primary"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-outline mb-1.5">
+                    퇴근 시간
+                  </label>
+                  <input
+                    type="time"
+                    value={editForm.arrivalTime}
+                    onChange={(e) => setEditForm({ ...editForm, arrivalTime: e.target.value })}
+                    className="w-full bg-stone-50 border-stone-200 rounded-lg text-sm focus:ring-primary focus:border-primary"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-4 flex gap-3">
+                <button
+                  onClick={() => setEditingLog(null)}
+                  className="flex-1 px-4 py-2.5 border border-stone-200 text-on-surface rounded-xl text-sm font-semibold hover:bg-stone-50 transition-colors"
+                >
+                  취소
+                </button>
+                <button
+                  onClick={saveLog}
+                  disabled={isSaving}
+                  className="flex-1 px-4 py-2.5 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary-dark transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {isSaving ? (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <span className="material-symbols-outlined text-lg">save</span>
+                  )}
+                  저장하기
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

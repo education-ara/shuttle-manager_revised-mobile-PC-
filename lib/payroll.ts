@@ -114,6 +114,7 @@ export function calculatePayroll(
       );
 
     return {
+      id: log?.id,
       date: dateStr,
       dayOfWeek: DAY_NAMES[dayIdx],
       checkInTime: checkIn,

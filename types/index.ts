@@ -36,6 +36,7 @@ export interface PayrollResult {
 }
 
 export interface DailyPayroll {
+  id?: string;
   date: string;
   dayOfWeek: string;
   checkInTime: string | null;
