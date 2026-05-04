@@ -16,12 +16,14 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     async function fetchData() {
-      const { data: teacherData } = await supabase
+      const { data: allTeacherData } = await supabase
         .from('teachers')
         .select('*')
         .order('name');
 
-      if (!teacherData) { setLoading(false); return; }
+      if (!allTeacherData) { setLoading(false); return; }
+      
+      const teacherData = allTeacherData.filter(t => (t.status || '근무') === '근무');
       setTeachers(teacherData);
 
       const [year, mon] = currentMonth.split('-').map(Number);

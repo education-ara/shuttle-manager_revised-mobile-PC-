@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Teacher } from '@/types';
 import { format } from 'date-fns';
+import { maskName } from '@/lib/payroll';
 
 const AVATAR_COLORS = [
   { bg: 'bg-blue-100', text: 'text-blue-600', ring: 'ring-blue-200' },
@@ -27,6 +28,7 @@ export default function HomePage() {
       const { data, error } = await supabase
         .from('teachers')
         .select('*')
+        .eq('status', '근무')
         .order('name');
       if (!error && data) setTeachers(data);
       setLoading(false);
@@ -113,7 +115,7 @@ export default function HomePage() {
                       {teacher.name.charAt(0)}
                     </span>
                   </div>
-                  <span className="text-sm md:text-base font-bold text-on-surface">{teacher.name}</span>
+                  <span className="text-sm md:text-base font-bold text-on-surface">{maskName(teacher.name)}</span>
                   <span className="text-[10px] md:text-xs text-on-surface-variant mt-0.5 opacity-70">
                     {teacher.start_date?.slice(0, 7)} 부터
                   </span>

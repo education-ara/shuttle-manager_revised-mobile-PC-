@@ -21,8 +21,14 @@ function LogsPageInner() {
   useEffect(() => {
     supabase.from('teachers').select('*').order('name').then(({ data }) => {
       if (data) {
-        setTeachers(data);
-        if (!initTeacherId && data.length > 0) setSelectedTeacherId(data[0].id);
+        const sorted = [...data].sort((a, b) => {
+          const aResigned = a.status === '퇴사' ? 1 : 0;
+          const bResigned = b.status === '퇴사' ? 1 : 0;
+          if (aResigned !== bResigned) return aResigned - bResigned;
+          return a.name.localeCompare(b.name);
+        });
+        setTeachers(sorted);
+        if (!initTeacherId && sorted.length > 0) setSelectedTeacherId(sorted[0].id);
       }
     });
   }, []);
@@ -81,7 +87,9 @@ function LogsPageInner() {
                        focus:ring-2 focus:ring-primary focus:outline-none w-44"
           >
             {teachers.map((t) => (
-              <option key={t.id} value={t.id}>{t.name} 선생님</option>
+              <option key={t.id} value={t.id}>
+                {t.status === '퇴사' ? `(퇴사) ${t.name} 선생님` : `${t.name} 선생님`}
+              </option>
             ))}
           </select>
         </div>

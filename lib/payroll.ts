@@ -171,3 +171,10 @@ export function formatHours(hours: number): string {
   const m = Math.round((hours - h) * 60);
   return `${h}시간 ${m}분`;
 }
+
+export function maskName(name: string): string {
+  if (!name || name.length < 2) return name;
+  const chars = name.split('');
+  chars[name.length - 2] = '*';
+  return chars.join('');
+}

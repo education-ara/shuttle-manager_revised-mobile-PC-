@@ -9,12 +9,20 @@ type FormData = {
   name: string;
   start_date: string;
   hourly_rate: string;
+  status: '근무' | '휴직' | '퇴사';
+  last_work_date: string;
+  leave_start_date: string;
+  leave_end_date: string;
 };
 
 const EMPTY_FORM: FormData = {
   name: '',
   start_date: format(new Date(), 'yyyy-MM-dd'),
   hourly_rate: '15000',
+  status: '근무',
+  last_work_date: '',
+  leave_start_date: '',
+  leave_end_date: '',
 };
 
 export default function TeachersPage() {
@@ -25,6 +33,7 @@ export default function TeachersPage() {
   const [form, setForm] = useState<FormData>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [filterStatus, setFilterStatus] = useState<'전체' | '근무' | '휴직' | '퇴사'>('근무');
 
   async function fetchTeachers() {
     const { data } = await supabase.from('teachers').select('*').order('name');
@@ -46,6 +55,10 @@ export default function TeachersPage() {
       name: t.name,
       start_date: t.start_date,
       hourly_rate: String(t.hourly_rate),
+      status: t.status || '근무',
+      last_work_date: t.last_work_date || '',
+      leave_start_date: t.leave_start_date || '',
+      leave_end_date: t.leave_end_date || '',
     });
     setShowForm(true);
   }
@@ -58,6 +71,10 @@ export default function TeachersPage() {
       name: form.name.trim(),
       start_date: form.start_date,
       hourly_rate: Number(form.hourly_rate),
+      status: form.status,
+      last_work_date: form.status === '퇴사' ? (form.last_work_date || null) : null,
+      leave_start_date: form.status === '휴직' ? (form.leave_start_date || null) : null,
+      leave_end_date: form.status === '휴직' ? (form.leave_end_date || null) : null,
     };
 
     if (editingId) {
@@ -79,6 +96,10 @@ export default function TeachersPage() {
     setConfirmDelete(null);
     fetchTeachers();
   }
+
+  const filteredTeachers = teachers.filter(
+    (t) => filterStatus === '전체' || (t.status || '근무') === filterStatus
+  );
 
   return (
     <div className="p-8 max-w-4xl mx-auto">
@@ -153,6 +174,65 @@ export default function TeachersPage() {
                   </span>
                 </div>
               </div>
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-outline mb-2">
+                  근무 상태 *
+                </label>
+                <select
+                  value={form.status}
+                  onChange={(e) => setForm({ ...form, status: e.target.value as FormData['status'] })}
+                  className="w-full bg-surface-container-high border-2 border-transparent focus:border-primary
+                             rounded-lg px-4 py-3 focus:outline-none transition-all"
+                >
+                  <option value="근무">근무</option>
+                  <option value="휴직">휴직</option>
+                  <option value="퇴사">퇴사</option>
+                </select>
+              </div>
+
+              {form.status === '휴직' && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-outline mb-2">
+                      휴직 시작일
+                    </label>
+                    <input
+                      type="date"
+                      value={form.leave_start_date}
+                      onChange={(e) => setForm({ ...form, leave_start_date: e.target.value })}
+                      className="w-full bg-surface-container-high border-2 border-transparent focus:border-primary
+                                 rounded-lg px-4 py-3 focus:outline-none transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-outline mb-2">
+                      복귀 예정일
+                    </label>
+                    <input
+                      type="date"
+                      value={form.leave_end_date}
+                      onChange={(e) => setForm({ ...form, leave_end_date: e.target.value })}
+                      className="w-full bg-surface-container-high border-2 border-transparent focus:border-primary
+                                 rounded-lg px-4 py-3 focus:outline-none transition-all"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {form.status === '퇴사' && (
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-outline mb-2">
+                    마지막 근무일
+                  </label>
+                  <input
+                    type="date"
+                    value={form.last_work_date}
+                    onChange={(e) => setForm({ ...form, last_work_date: e.target.value })}
+                    className="w-full bg-surface-container-high border-2 border-transparent focus:border-primary
+                               rounded-lg px-4 py-3 focus:outline-none transition-all"
+                  />
+                </div>
+              )}
               <div className="flex justify-end gap-3 pt-2">
                 <button
                   type="button"
@@ -205,6 +285,23 @@ export default function TeachersPage() {
         </div>
       )}
 
+      {/* Filter Tabs */}
+      <div className="flex items-center gap-2 mb-4 bg-surface-container-lowest p-2 rounded-xl border border-stone-100 w-fit">
+        {(['전체', '근무', '휴직', '퇴사'] as const).map((status) => (
+          <button
+            key={status}
+            onClick={() => setFilterStatus(status)}
+            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+              filterStatus === status
+                ? 'bg-primary text-on-primary shadow-sm'
+                : 'text-on-surface-variant hover:bg-surface-container hover:text-on-surface'
+            }`}
+          >
+            {status}
+          </button>
+        ))}
+      </div>
+
       {/* Teachers Table */}
       <div className="bg-surface-container-lowest rounded-xl border border-stone-100 overflow-hidden">
         {loading ? (
@@ -213,7 +310,7 @@ export default function TeachersPage() {
               <div key={i} className="h-16 bg-stone-100 rounded-lg animate-pulse" />
             ))}
           </div>
-        ) : teachers.length === 0 ? (
+        ) : filteredTeachers.length === 0 ? (
           <div className="p-16 text-center text-on-surface-variant">
             <span className="material-symbols-outlined text-5xl block mb-4 opacity-30">person_off</span>
             <p className="font-medium">등록된 선생님이 없습니다</p>
@@ -232,7 +329,7 @@ export default function TeachersPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100">
-              {teachers.map((t) => (
+              {filteredTeachers.map((t) => (
                 <tr key={t.id} className="hover:bg-stone-50/50 transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
@@ -241,7 +338,28 @@ export default function TeachersPage() {
                           {t.name.charAt(0)}
                         </span>
                       </div>
-                      <span className="font-semibold text-on-surface">{t.name}</span>
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-on-surface flex items-center gap-2">
+                          {t.name}
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                            (t.status || '근무') === '근무' ? 'bg-emerald-100 text-emerald-700' :
+                            (t.status || '근무') === '휴직' ? 'bg-amber-100 text-amber-700' :
+                            'bg-stone-100 text-stone-600'
+                          }`}>
+                          {t.status || '근무'}
+                        </span>
+                        {t.status === '퇴사' && t.last_work_date && (
+                          <span className="text-[10px] text-error font-medium">
+                            퇴사일: {t.last_work_date}
+                          </span>
+                        )}
+                        {t.status === '휴직' && (t.leave_start_date || t.leave_end_date) && (
+                          <span className="text-[10px] text-amber-600 font-medium">
+                            휴직: {t.leave_start_date || '?'} ~ {t.leave_end_date || '?'}
+                          </span>
+                        )}
+                      </span>
+                    </div>
                     </div>
                   </td>
                   <td className="px-6 py-4 text-sm text-on-surface-variant">{t.start_date}</td>

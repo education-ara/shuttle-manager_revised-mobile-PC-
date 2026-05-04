@@ -4,6 +4,10 @@ export interface Teacher {
   start_date: string;
   hourly_rate: number;
   created_at: string;
+  status: '근무' | '휴직' | '퇴사';
+  last_work_date: string | null;
+  leave_start_date: string | null;
+  leave_end_date: string | null;
 }
 
 export interface WorkLog {

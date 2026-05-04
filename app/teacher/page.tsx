@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Teacher, WorkLog, Holiday } from '@/types';
-import { getWeekdaysOfMonth, formatKoreanDate } from '@/lib/payroll';
+import { getWeekdaysOfMonth, formatKoreanDate, maskName } from '@/lib/payroll';
 import { format, addMonths, subMonths } from 'date-fns';
 import { Suspense } from 'react';
 
@@ -217,7 +217,7 @@ function TeacherPageInner() {
           </button>
           <div className="h-6 w-[1px] bg-stone-200 mx-1 hidden sm:block" />
           <div>
-            <div className="text-sm font-bold text-on-surface font-headline">{teacher.name} 선생님</div>
+            <div className="text-sm font-bold text-on-surface font-headline">{maskName(teacher.name)} 선생님</div>
             <div className="text-xs text-on-surface-variant">{monthLabel} 근무일지</div>
           </div>
         </div>
@@ -255,7 +255,7 @@ function TeacherPageInner() {
               </span>
             </div>
             <div>
-              <h2 className="text-xl font-bold text-on-surface font-headline">{teacher.name} 선생님</h2>
+              <h2 className="text-xl font-bold text-on-surface font-headline">{maskName(teacher.name)} 선생님</h2>
               <p className="text-sm text-on-surface-variant">
                 근무 시작: <span className="font-semibold">{teacher.start_date}</span>
               </p>
